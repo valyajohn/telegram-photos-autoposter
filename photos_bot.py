@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 Премиум парсер и автопостинг гламурных фотосессий звезд, актрис и топ-моделей в Telegram канал.
-- Высочайшее качество (без сжатия через sendDocument / full-res raw URL).
-- Разнообразные свежие источники и запросы (актуальные тренды, премиум съёмки).
+- Использует sendPhoto для красивого интерактивного превью в ленте канала с высоким качеством.
+- Разнообразные свежие источники и запросы.
 - Дерзкий сленг, атмосфера роскоши и огромная база уникальных хэштегов.
 - Антирекламный фильтр.
 """
@@ -113,28 +113,18 @@ def fetch_glamour_photos():
         log(f"Ошибка запроса к Unsplash: {e}")
     return []
 
-def send_telegram_photo_uncompressed(bot_token: str, channel_id: str, image_url: str, caption: str):
-    full_image_url = image_url.split("?")[0] + "?q=95&w=2400&fm=jpg"
+def send_telegram_photo_with_preview(bot_token: str, channel_id: str, image_url: str, caption: str):
+    # Используем sendPhoto с высоким разрешением (w=2400), что дает великолепное превью в ленте Telegram
+    photo_url = image_url.split("?")[0] + "?q=95&w=2400&fm=jpg"
     
-    url = f"https://api.telegram.org/bot{bot_token}/sendDocument"
+    url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
     data = {
         "chat_id": channel_id,
-        "document": full_image_url,
+        "photo": photo_url,
         "caption": caption,
         "parse_mode": "HTML"
     }
     resp = requests.post(url, data=data, timeout=45)
-    
-    if not resp.json().get("ok"):
-        fallback_url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
-        fallback_data = {
-            "chat_id": channel_id,
-            "photo": full_image_url,
-            "caption": caption,
-            "parse_mode": "HTML"
-        }
-        resp = requests.post(fallback_url, data=fallback_data, timeout=45)
-        
     return resp.json()
 
 def main():
@@ -177,11 +167,11 @@ def main():
 
         caption = f"{intro}\n\n<b>{desc.capitalize()}</b>\n\n{outro}\n\n📸 Photo by <i>{author}</i>\n\n{tags_str}"
 
-        log(f"Публикация гламурного кадра {photo_id} ({published_count + 1}/{target_count}) в канал {channel_id}...")
-        result = send_telegram_photo_uncompressed(bot_token, channel_id, image_url, caption)
+        log(f"Публикация гламурного кадра {photo_id} ({published_count + 1}/{target_count}) в канал {channel_id} с превью...")
+        result = send_telegram_photo_with_preview(bot_token, channel_id, image_url, caption)
         
         if result.get("ok"):
-            log("Успешно опубликовано в оригинальном качестве!")
+            log("Успешно опубликовано с превью в ленте!")
             save_state(photo_id)
             published_count += 1
             time.sleep(4)
