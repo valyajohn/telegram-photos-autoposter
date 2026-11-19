@@ -46,7 +46,6 @@ SLANG_OUTROS = [
     "Энергия дорогой и уверенной в себе звезды. 👑"
 ]
 
-# Премиальные запросы для поиска топовых гламурных фотосессий
 GLAMOUR_QUERIES = [
     "celebrity glamour photoshoot red carpet",
     "high fashion editorial gorgeous model portrait",
@@ -56,13 +55,12 @@ GLAMOUR_QUERIES = [
     "stunning actress glamour magazine cover"
 ]
 
-# Огромный пулл разнообразных хэштегов (чтобы не было повторов)
 HASHTAG_POOL = [
     "гламур", "звезды", "актрисы", "модели", "красота", "стиль", "мода", 
     "люкс", "эстетика", "роскошь", "фотосессия", "глянец", "вайб", "кумир",
     "glamour", "celebrity", "actress", "model", "vogue", "editorial", 
     "fashion", "luxury", "beauty", "style", "photoshoot", "icon", "queen",
-    "highfashion", "runway", "magazinencover", "darkbeauty", "sensual"
+    "highfashion", "runway", "magazinecover", "darkbeauty", "sensual"
 ]
 
 def log(msg: str):
@@ -104,7 +102,7 @@ def fetch_glamour_photos():
         "query": query,
         "count": 5,
         "client_id": client_id,
-        "orientation": "portrait" # Вертикальные фото идеально для Telegram
+        "orientation": "portrait"
     }
     try:
         resp = requests.get(url, params=params, timeout=20)
@@ -116,8 +114,6 @@ def fetch_glamour_photos():
     return []
 
 def send_telegram_photo_uncompressed(bot_token: str, channel_id: str, image_url: str, caption: str):
-    # Отправляем оригинал без сжатия через sendDocument с высоким разрешением (или сырой full URL)
-    # Заменяем URL Unsplash на максимальное качество (raw / full)
     full_image_url = image_url.split("?")[0] + "?q=95&w=2400&fm=jpg"
     
     url = f"https://api.telegram.org/bot{bot_token}/sendDocument"
@@ -129,7 +125,6 @@ def send_telegram_photo_uncompressed(bot_token: str, channel_id: str, image_url:
     }
     resp = requests.post(url, data=data, timeout=45)
     
-    # Если вдруг sendDocument не прошел из-за формата, пробуем sendPhoto в высоком качестве
     if not resp.json().get("ok"):
         fallback_url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
         fallback_data = {
@@ -177,22 +172,12 @@ def main():
 
         intro = random.choice(SLANG_INTROS)
         outro = random.choice(SLANG_OUTROS)
-        
-        # Берем 7 случайных уникальных хэштегов из огромного пула
         tags = random.sample(HASHTAG_POOL, min(7, len(HASHTAG_POOL)))
         tags_str = " ".join([f"#{t}" for t in tags])
 
-        caption = f"{intro}
+        caption = f"{intro}\n\n<b>{desc.capitalize()}</b>\n\n{outro}\n\n📸 Photo by <i>{author}</i>\n\n{tags_str}"
 
-<b>{desc.capitalize()}</b>
-
-{outro}
-
-📸 Photo by <i>{author}</i>
-
-{tags_str}"
-
-        log(f"Публикация гламурного кадра {photo_id} ({published_count + 1}/{target_count}) в канал {channel_id} (в оригинальном качестве)...")
+        log(f"Публикация гламурного кадра {photo_id} ({published_count + 1}/{target_count}) в канал {channel_id}...")
         result = send_telegram_photo_uncompressed(bot_token, channel_id, image_url, caption)
         
         if result.get("ok"):
