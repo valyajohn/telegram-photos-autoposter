@@ -6,6 +6,9 @@ on:
     - cron: '0 */2 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   post-photos:
     runs-on: ubuntu-latest
@@ -31,6 +34,13 @@ jobs:
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
         run: |
           python photos_bot.py
+
+      - name: Commit state updates
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "📸 Auto-published new photoshoots [skip ci]"
+          file_pattern: "state/photos_state.csv"
+
 
       - name: Commit state updates
         uses: stefanzweifel/git-auto-commit-action@v5
