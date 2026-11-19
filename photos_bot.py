@@ -2,14 +2,16 @@
 # -*- coding: utf-8 -*-
 """
 Парсер и автопостинг чувственных и дерзких фотосессий (Unsplash API) в Telegram канал.
+- Публикует по 5 фото за 1 запуск.
 - С антирекламным фильтром.
-- С дерзким сленгом, чувственной эстетикой и хэштегами.
+- С дерзким сленгом и хэштегами.
 """
 import os
 import sys
 import csv
 import json
 import random
+import time
 import requests
 from pathlib import Path
 from datetime import datetime, timezone
@@ -90,11 +92,11 @@ def fetch_aesthetic_photos():
     query = random.choice(SENSUAL_QUERIES)
     params = {
         "query": query,
-        "count": 1,
+        "count": 5,
         "client_id": client_id
     }
     try:
-        resp = requests.get(url, params=params, timeout=15)
+        resp = requests.get(url, params=params, timeout=20)
         if resp.status_code == 200:
             data = resp.json()
             return data if isinstance(data, list) else [data]
@@ -116,8 +118,18 @@ def main():
 
     uploaded = load_state()
     photos = fetch_aesthetic_photos()
+    
+    if not photos:
+        log("Не удалось получить фотографии от Unsplash.")
+        return
+
+    published_count = 0
+    target_count = 5
 
     for p in photos:
+        if published_count >= target_count:
+            break
+
         photo_id = p.get("id")
         if photo_id in uploaded:
             continue
@@ -135,16 +147,27 @@ def main():
         tags = random.sample(HASHTAG_POOL, 4)
         tags_str = " ".join([f"#{t}" for t in tags])
 
-        caption = f"{intro}\n\n<b>{desc.capitalize()}</b>\n\n{outro}\n\n📸 Photo by <i>{author}</i>\n\n{tags_str}"
+        caption = f"{intro}
 
-        log(f"Публикация чувственной фотосессии {photo_id} в канал {channel_id}...")
+<b>{desc.capitalize()}</b>
+
+{outro}
+
+📸 Photo by <i>{author}</i>
+
+{tags_str}"
+
+        log(f"Публикация фотосессии {photo_id} ({published_count + 1}/{target_count}) в канал {channel_id}...")
         result = send_telegram_photo(bot_token, channel_id, image_url, caption)
         if result.get("ok"):
-            log("Фото успешно опубликовано в канал!")
+            log("Фото успешно опубликовано!")
             save_state(photo_id)
-            break
+            published_count += 1
+            time.sleep(3) # Небольшая пауза между отправкой фото
         else:
             log(f"Ошибка Telegram API: {result}")
+
+    log(f"Итог: опубликовано фотосессий: {published_count}")
 
 if __name__ == "__main__":
     main()
