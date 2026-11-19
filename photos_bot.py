@@ -147,15 +147,7 @@ def main():
         tags = random.sample(HASHTAG_POOL, 4)
         tags_str = " ".join([f"#{t}" for t in tags])
 
-        caption = f"{intro}
-
-<b>{desc.capitalize()}</b>
-
-{outro}
-
-📸 Photo by <i>{author}</i>
-
-{tags_str}"
+        caption = f"{intro}\n\n<b>{desc.capitalize()}</b>\n\n{outro}\n\n📸 Photo by <i>{author}</i>\n\n{tags_str}"
 
         log(f"Публикация фотосессии {photo_id} ({published_count + 1}/{target_count}) в канал {channel_id}...")
         result = send_telegram_photo(bot_token, channel_id, image_url, caption)
@@ -163,7 +155,7 @@ def main():
             log("Фото успешно опубликовано!")
             save_state(photo_id)
             published_count += 1
-            time.sleep(3) # Небольшая пауза между отправкой фото
+            time.sleep(3)
         else:
             log(f"Ошибка Telegram API: {result}")
 
