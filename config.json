@@ -1,0 +1,10 @@
+{
+  "interval_hours": 2,
+  "timezone": "Europe/Moscow",
+  "telegram_channel_id": "@my_channel_username",
+  "default_tags": [
+    "photoshoot",
+    "aesthetic",
+    "sensual"
+  ]
+}
